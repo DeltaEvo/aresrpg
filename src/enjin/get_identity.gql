@@ -1,0 +1,15 @@
+query get_identity($id: Int!) {
+  EnjinIdentity(id: $id) {
+    id
+    linkingCode
+    linkingCodeQr
+    appId
+    user {
+      id
+      name
+    }
+    wallet {
+      ethAddress
+    }
+  }
+}

@@ -1,0 +1,13 @@
+mutation create_player($name: String!) {
+  CreateEnjinUser(name: $name) {
+    id
+    accessTokens
+    identities {
+      linkingCode
+      linkingCodeQr
+      wallet {
+        ethAddress
+      }
+    }
+  }
+}
