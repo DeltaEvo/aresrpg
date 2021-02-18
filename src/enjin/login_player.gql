@@ -1,6 +1,0 @@
-query login_player($name: String!) {
-  AuthPlayer(id: $name) {
-    accessToken
-    expiresIn
-  }
-}

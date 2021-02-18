@@ -43,6 +43,7 @@ import mobs_damage from './mobs/damage.js'
 import mobs_goto from './mobs/goto.js'
 import mobs_target from './mobs/target.js'
 import mobs_look_at from './mobs/look_at.js'
+import Enjin from './enjin/enjin.js'
 import commands_declare from './commands/declare.js'
 import start_debug_server from './debug.js'
 import observe_performance from './performance.js'
@@ -137,6 +138,7 @@ function reduce_state(state, action) {
     player_deal_damage.reduce,
     player_inventory.reduce,
     chunk_update.reduce,
+    Enjin.reducer,
   ].reduce((intermediate, fn) => fn(intermediate, action), state)
 }
 
@@ -208,7 +210,7 @@ function create_context(client) {
   /** @type {NodeJS.EventEmitter} */
   const events = new EventEmitter()
 
-  aiter(combineAsyncIterators(actions[Symbol.asyncIterator](), packets))
+  aiter(combineAsyncIterators(actions[Symbol.asyncIterator](), packets, ...Enjin.sources))
     .map(transform_action)
     .reduce((last_state, action) => {
       const state = reduce_state(last_state, action)
