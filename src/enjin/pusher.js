@@ -56,12 +56,14 @@ const Channels = {
   app: pusher.subscribe(app.replace('{id}', APP_ID)),
 }
 
-const generate_event = (event) => events.on(emitter, event)
-const bind_event = (event, channel) =>
+function yield_events(event, channel) {
   channel.bind(event, (value) => emitter.emit(event, value))
-
-bind_event(Events.TOKEN_MINTED, Channels.app)
-
-export default {
-  on_token_minted: generate_event(Events.TOKEN_MINTED),
+  return events.on(emitter, event)
 }
+
+const sources = [
+  yield_events(Events.TOKEN_MINTED, Channels.app),
+  yield_events(Events.TOKEN_TRANSFERRED, Channels.app),
+]
+
+export { Events, sources }

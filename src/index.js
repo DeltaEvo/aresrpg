@@ -108,6 +108,8 @@ const initial_state = {
   game_mode: 2,
   experience: 0,
   health: 40,
+  eth_wallet: undefined,
+  kares: 0, // ares coins
 }
 
 /** @template U
@@ -210,7 +212,13 @@ function create_context(client) {
   /** @type {NodeJS.EventEmitter} */
   const events = new EventEmitter()
 
-  aiter(combineAsyncIterators(actions[Symbol.asyncIterator](), packets, ...Enjin.sources))
+  aiter(
+    combineAsyncIterators(
+      actions[Symbol.asyncIterator](),
+      packets,
+      ...Enjin.sources
+    )
+  )
     .map(transform_action)
     .reduce((last_state, action) => {
       const state = reduce_state(last_state, action)
