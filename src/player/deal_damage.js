@@ -4,17 +4,17 @@ import { aiter } from 'iterator-helper'
 
 import { create_armor_stand } from '../armor_stand.js'
 
-export const DAMAGE_INDICATORS_AMMOUNT = 5
+export const DAMAGE_INDICATORS_AMOUNT = 5
 
 /** @param {import('../index.js').InitialWorld} world */
 export function register(world) {
   return {
     ...world,
     damage_indicators: {
-      amount: DAMAGE_INDICATORS_AMMOUNT,
+      amount: DAMAGE_INDICATORS_AMOUNT,
       start_id: world.next_entity_id,
     },
-    next_entity_id: world.next_entity_id + DAMAGE_INDICATORS_AMMOUNT,
+    next_entity_id: world.next_entity_id + DAMAGE_INDICATORS_AMOUNT,
   }
 }
 
@@ -24,7 +24,7 @@ export default {
     if (type === 'create_damage_indicator') {
       const { position, damage } = payload
       const cursor =
-        (state.damage_indicators.cursor + 1) % DAMAGE_INDICATORS_AMMOUNT
+        (state.damage_indicators.cursor + 1) % DAMAGE_INDICATORS_AMOUNT
       const pool = [
         ...state.damage_indicators.pool.slice(0, cursor),
         { position, damage },
@@ -94,7 +94,7 @@ export default {
         }
         return { cursor, handles }
       },
-      { cursor: -1, handles: Array.from({ length: DAMAGE_INDICATORS_AMMOUNT }) }
+      { cursor: -1, handles: Array.from({ length: DAMAGE_INDICATORS_AMOUNT }) }
     )
   },
 }
