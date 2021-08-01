@@ -127,7 +127,7 @@ function reduce_state(state, action) {
     player_position.reduce,
     player_view_distance.reduce,
     plugin_channels.reduce,
-    player_fall_damage.reduce,
+    player_health.reduce,
     player_deal_damage.reduce,
     player_inventory.reduce,
     chunk_update.reduce,
