@@ -32,61 +32,66 @@ function observe_mobs(mobs) {
   path_end(mobs)
 }
 
+const DEFAULT_SPEED = 100 /* instant speed, 1ms/block */
+
+const MOVEMENT_SPEED_TO_BLOCKS_PER_SECOND = 10
+
 export default {
   /** @param {import('./index.js').InitialWorld} world */
   register(world) {
-    const mobs = world.mobs.map(
-      ({ position, mob, level, speed, health }, i) => {
-        const initial_state = {
-          path: [position],
-          open: [],
-          closed: [],
-          start_time: 0,
-          speed: speed * 1000 /* ms/block */,
-          health /* halfheart */,
-          blackboard: {},
-          wakeup_at: 0,
-          sleep_id: null,
-          look_at: { player: false, yaw: 0, pitch: 0 },
-        }
-
-        const actions = new PassThrough({ objectMode: true })
-        const events = new EventEmitter()
-
-        const entity_id = world.next_entity_id + i
-
-        aiter(actions).reduce(async (last_state, action) => {
-          const state = await reduce_mob(last_state, action, {
-            world: world.get(),
-            mob,
-            entity_id,
-          })
-          events.emit('state', state)
-          return state
-        }, initial_state)
-
-        setImmediate(() => events.emit('state', initial_state))
-
-        const get_state = last_event_value(events, 'state')
-
-        return {
-          entity_id,
-          mob,
-          level,
-          events,
-          get_state,
-          constants: entitiesByName[Types[mob].mob],
-          position(time = Date.now()) {
-            const { path, start_time, speed } = get_state()
-
-            return path_position({ path, time, start_time, speed })
-          },
-          dispatch(type, payload, time = Date.now()) {
-            actions.write({ type, payload, time })
-          },
-        }
+    const mobs = world.mobs.map(({ position, mob, level }, i) => {
+      const { speed = DEFAULT_SPEED, health } = Types[mob]
+      const initial_state = {
+        path: [position],
+        open: [],
+        closed: [],
+        start_time: 0,
+        speed:
+          (1 / (speed * MOVEMENT_SPEED_TO_BLOCKS_PER_SECOND)) *
+          1000 /* ms/block */,
+        health /* halfheart */,
+        blackboard: {},
+        wakeup_at: 0,
+        sleep_id: null,
+        look_at: { player: false, yaw: 0, pitch: 0 },
       }
-    )
+
+      const actions = new PassThrough({ objectMode: true })
+      const events = new EventEmitter()
+
+      const entity_id = world.next_entity_id + i
+
+      aiter(actions).reduce(async (last_state, action) => {
+        const state = await reduce_mob(last_state, action, {
+          world: world.get(),
+          mob,
+          entity_id,
+        })
+        events.emit('state', state)
+        return state
+      }, initial_state)
+
+      setImmediate(() => events.emit('state', initial_state))
+
+      const get_state = last_event_value(events, 'state')
+
+      return {
+        entity_id,
+        mob,
+        level,
+        events,
+        get_state,
+        constants: entitiesByName[Types[mob].mob],
+        position(time = Date.now()) {
+          const { path, start_time, speed } = get_state()
+
+          return path_position({ path, time, start_time, speed })
+        },
+        dispatch(type, payload, time = Date.now()) {
+          actions.write({ type, payload, time })
+        },
+      }
+    })
 
     observe_mobs(mobs)
 
