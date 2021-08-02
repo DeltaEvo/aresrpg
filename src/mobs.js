@@ -51,6 +51,7 @@ export default {
           1000 /* ms/block */,
         health /* halfheart */,
         blackboard: {},
+        attack_sequence_number: 0,
         wakeup_at: 0,
         sleep_id: null,
         look_at: { player: false, yaw: 0, pitch: 0 },

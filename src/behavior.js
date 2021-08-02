@@ -17,6 +17,7 @@ import look_at_player from './behavior/look_at_player.js'
 import random from './behavior/random.js'
 import sleep from './behavior/sleep.js'
 import repeat from './behavior/repeat.js'
+import attack_target from './behavior/attack_target.js'
 
 import { debug } from './index.js'
 
@@ -37,6 +38,7 @@ const nodes = {
   random,
   sleep,
   repeat,
+  attack_target,
 }
 
 export const SUCCESS = Symbol('SUCCESS')
