@@ -39,7 +39,7 @@
     "pino": "^6.11.1",
     "prismarine-provider-anvil": "^2.3.1",
     "vec3": "^0.1.7",
-    "xmldom": "^0.4.0"
+    "xmldom": "^0.5.0"
   },
   "devDependencies": {
     "@hydre/pino-human": "^1.2.0",
