@@ -5,8 +5,8 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "start": "node src/index.js | pino-human",
-    "debug": "node --inspect=0.0.0.0 src/index.js | pino-human",
+    "start": "node --expose-gc src/index.js | pino-human",
+    "debug": "node --expose-gc --inspect=0.0.0.0 src/index.js | pino-human",
     "lint": "eslint . && prettier . --check && npm run typecheck",
     "typecheck": "tsc --build",
     "format": "prettier . --write && eslint . --fix",
