@@ -46,6 +46,7 @@ import mobs_look_at from './mobs/look_at.js'
 import commands_declare from './commands/declare.js'
 import start_debug_server from './debug.js'
 import observe_performance from './performance.js'
+import { abortable } from './iterator.js'
 
 const log = logger(import.meta)
 
@@ -150,6 +151,10 @@ function transform_action(action) {
 
 const mobs_position = mobs_position_factory(world)
 
+const cleanup = new FinalizationRegistry((key) => {
+  log.info({ key }, "Unloaded")
+})
+
 /** @type Observer */
 async function observe_client(context) {
   /* Observers that handle the protocol part.
@@ -181,6 +186,12 @@ async function observe_client(context) {
   mobs_look_at.observe(context)
 
   chunk_update.observe(context)
+
+  const uuid = context.client.uuid
+  cleanup.register(context.client, `${uuid}_client`)
+  cleanup.register(context.events, `${uuid}_events`)
+  cleanup.register(context.signal, `${uuid}_signal`)
+  cleanup.register(context,`${uuid}_context`)
 }
 
 /**
@@ -194,13 +205,31 @@ async function observe_client(context) {
  * @param {protocol.Client} client
  */
 function create_context(client) {
-  client.on('error', (error) => {
-    throw error
+  log.info(
+    {
+      uuid: client.uuid,
+      username: client.username,
+    },
+    'Client connected'
+  )
+
+  client.on('error', (error) => log.error(error, 'Client error'))
+
+  const controller = new AbortController()
+  client.once('end', () => {
+    log.info(
+      { uuid: client.uuid, username: client.username },
+      'Client disconnected'
+    )
+    controller.abort()
+    global.gc()
   })
 
   const actions = new PassThrough({ objectMode: true })
 
-  const packets = aiter(on(client, 'packet')).map(([payload, { name }]) => ({
+  const packets = aiter(
+    abortable(on(client, 'packet', { signal: controller.signal }))
+  ).map(([payload, { name }]) => ({
     type: `packet/${name}`,
     payload,
   }))
@@ -220,6 +249,7 @@ function create_context(client) {
     client,
     world,
     events,
+    signal: controller.signal,
     get_state: last_event_value(events, 'state'),
     dispatch(type, payload) {
       actions.write({ type, payload })
