@@ -1,0 +1,27 @@
+name: Create Deployment
+
+on:
+  pull_request_target:
+    types: [labeled]
+
+jobs:
+  create-deployment:
+    if: ${{ github.event.label.name == 'deploy' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v4
+        with:
+          github-token: ${{ secrets.DEPLOY_TOKEN }}
+          script: |
+            await github.repos.createDeployment({
+              ...context.repo,
+              ref: context.payload.pull_request.head.sha,
+              auto_merge: false,
+              environment: `pr${context.payload.pull_request.number}`,
+              required_contexts: [],
+            })
+      - uses: actions-ecosystem/action-remove-labels@v1
+        if: always()
+        with:
+          github_token: ${{ github.token }}
+          labels: deploy

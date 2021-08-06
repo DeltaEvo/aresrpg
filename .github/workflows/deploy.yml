@@ -1,0 +1,66 @@
+name: Deploy
+
+on: deployment
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: cachix/install-nix-action@v13
+        with:
+          install_url: https://nixos-nix-install-tests.cachix.org/serve/i6laym9jw3wg9mw6ncyrk6gjx4l34vvx/install
+          install_options: '--tarball-url-prefix https://nixos-nix-install-tests.cachix.org/serve'
+          extra_nix_config: experimental-features = nix-command flakes
+      - run: nix build --print-build-logs .#dockerImage.x86_64-linux
+      - run: mv result image.tar.gz
+      - uses: actions/upload-artifact@v2
+        with:
+          name: docker-image
+          path: image.tar.gz
+  publish:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: docker-image
+      - run: docker load < image.tar.gz
+      - run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - run: docker tag aresrpg ghcr.io/${GITHUB_REPOSITORY,,}:${{ github.event.deployment.environment }}
+      - run: docker push ghcr.io/${GITHUB_REPOSITORY,,}:${{ github.event.deployment.environment }}
+  deploy:
+    needs: [publish]
+    runs-on: ubuntu-latest
+    container:
+      image: alpine/k8s:1.20.4
+    steps:
+      - uses: actions/checkout@v2
+      - run: mkdir $HOME/.kube; echo "$KUBECONFIG_FILE" > $HOME/.kube/config
+        env:
+          KUBECONFIG_FILE: ${{ secrets.KUBECONFIG_FILE }}
+      - run: |
+          helm upgrade \
+            --install \
+            --namespace ${{ github.event.deployment.environment }} \
+            --create-namespace \
+            --set image="ghcr.io/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]'):${{ github.event.deployment.environment }}" \
+            --atomic \
+            aresrpg ./helm
+  status:
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - uses: technote-space/workflow-conclusion-action@v2
+      - uses: actions/github-script@v4
+        with:
+          script: |
+            const url = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            await github.repos.createDeploymentStatus({
+              ...context.repo,
+              deployment_id: context.payload.deployment.id,
+              state: process.env.WORKFLOW_CONCLUSION === "success" ? "success" : "failure",
+              log_url: url,
+              target_url: url,
+            })
